@@ -15,8 +15,6 @@ from gcounter import GCounter
 # Config
 NODE_ID = os.getenv("NODE_ID", "node_a")
 PEERS = [p for p in os.getenv("PEERS", "").split(",") if p]
-print(f"NODE_ID: {NODE_ID}")
-print(f"PEERS: {PEERS}")
 RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))
 RIFTCODEX = os.getenv("RIFTCODEX_URL", "https://api.riftcodex.com")
 
@@ -176,3 +174,11 @@ async def events():
             await asyncio.sleep(1)
     
     return StreamingResponse(stream(), media_type = "text/event-stream")
+
+@app.post("/debug/reset")
+async def debug_reset():
+    """Development only, remove before final commit"""
+    async with mutex_lock:
+        counter.reset()
+        stats.update({"allowed": 0, "rejected": 0, "riftcodex_hits": 0})
+    return {"reset": True}
