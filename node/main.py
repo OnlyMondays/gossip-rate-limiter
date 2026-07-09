@@ -174,11 +174,3 @@ async def events():
             await asyncio.sleep(1)
     
     return StreamingResponse(stream(), media_type = "text/event-stream")
-
-@app.post("/debug/reset")
-async def debug_reset():
-    """Development only, remove before final commit"""
-    async with mutex_lock:
-        counter.reset()
-        stats.update({"allowed": 0, "rejected": 0, "riftcodex_hits": 0})
-    return {"reset": True}
