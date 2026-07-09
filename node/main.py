@@ -74,6 +74,17 @@ async def handle_request(body: dict):
             "error": str(e),
             "global_total": counter.total(),
         }
+    
+@app.post("/gossip")
+async def gossip(payload: dict):
+    async with mutex_lock:
+        await maybe_reset()
+        if payload.get("window") == window_start:
+            counter.merge(payload["counts"])
+        return {
+            "counts": counter.snapshot(),
+            "window": window_start,
+        }
         
 
 @app.get("/status")
