@@ -1,0 +1,59 @@
+services:
+
+  node_a:
+    build: ./node
+    environment:
+      NODE_ID: node_a
+      PEERS: "http://node_b:8000,http://node_c:8000,http://node_d:8000"
+      RATE_LIMIT: "100"
+      RIFTCODEX_URL: "https://api.riftcodex.com"
+    ports:
+      - "8001:8000"
+    networks:
+      - rlnet
+    restart: unless-stopped
+
+  node_b:
+    build: ./node
+    environment:
+      NODE_ID: node_b
+      PEERS: "http://node_a:8000,http://node_c:8000,http://node_d:8000"
+      RATE_LIMIT: "100"
+      RIFTCODEX_URL: "https://api.riftcodex.com"
+    ports:
+      - "8002:8000"
+    networks:
+      - rlnet
+    restart: unless-stopped
+
+  node_c:
+    build: ./node
+    environment:
+      NODE_ID: node_c
+      PEERS: "http://node_a:8000,http://node_b:8000,http://node_d:8000"
+      RATE_LIMIT: "100"
+      RIFTCODEX_URL: "https://api.riftcodex.com"
+    ports:
+      - "8003:8000"
+    networks:
+      - rlnet
+    restart: unless-stopped
+
+  node_d:
+    build: ./node
+    environment:
+      NODE_ID: node_d
+      PEERS: "http://node_a:8000,http://node_b:8000,http://node_c:8000"
+      RATE_LIMIT: "100"
+      RIFTCODEX_URL: "https://api.riftcodex.com"
+    ports:
+      - "8004:8000"
+    networks:
+      - rlnet
+    restart: unless-stopped
+
+  # Add the generator and dashboard services here whenever you get around to it
+
+networks:
+  rlnet:
+    driver: bridge
