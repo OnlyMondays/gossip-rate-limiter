@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rate Limiter - Riftcodex</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "IBM Plex Mono", "Courier New", monospace;
+      background: #0a0c10; color: #cdd6f4;
+      padding: 2rem; min-height: 100vh;
+    }
+    header {
+      display: flex; align-items: baseline; gap: 1rem;
+      margin-bottom: 2.5rem; padding-bottom: 1rem;
+      border-bottom: 1px solid #1e2030;
+    }
+    header h1   { font-size: 1rem; color: #89b4fa; letter-spacing: 0.08em; }
+    header span { font-size: 0.75rem; color: #6c7086; }
+    .label {
+      font-size: 0.7rem; letter-spacing: 0.12em;
+      color: #6c7086; text-transform: uppercase; margin-bottom: 0.4rem;
+    }
+    .big-number {
+      font-size: 4rem; font-weight: 700;
+      color: #cba6f7; line-height: 1; margin-bottom: 0.75rem;
+    }
+    .big-number .denom { color: #6c7086; font-size: 2rem; }
+    .bar-track {
+      width: 100%; max-width: 640px; height: 8px;
+      background: #1e2030; border-radius: 4px;
+      overflow: hidden; margin-bottom: 2rem;
+    }
+    .bar-fill {
+      height: 100%; background: #a6e3a1; border-radius: 4px;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+    .bar-fill.warning  { background: #f9e2af; }
+    .bar-fill.critical { background: #f38ba8; }
+    .stats-row { display: flex; gap: 2.5rem; margin-bottom: 2.5rem; }
+    .stat .val { font-size: 1.6rem; font-weight: 700; color: #cdd6f4; }
+    .stat .ok  { color: #a6e3a1; }
+    .stat .bad { color: #f38ba8; }
+    .stat .hit { color: #89b4fa; }
+    .nodes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1rem; max-width: 900px;
+    }
+    .node-card {
+      background: #11131d; border: 1px solid #1e2030;
+      border-radius: 6px; padding: 1.2rem;
+      transition: border-color 0.3s ease, opacity 0.3s ease;
+    }
+    .node-card.offline { opacity: 0.3; border-color: #f38ba8; }
+    .node-card .name  {
+      font-size: 0.7rem; letter-spacing: 0.1em; color: #89b4fa;
+      text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .node-card .count { font-size: 2.2rem; font-weight: 700; line-height: 1; margin-bottom: 0.6rem; }
+    .node-card .row   { font-size: 0.75rem; color: #6c7086; display: flex; gap: 1rem; }
+    .node-card .row .ok  { color: #a6e3a1; }
+    .node-card .row .bad { color: #f38ba8; }
+    footer { margin-top: 3rem; font-size: 0.7rem; color: #313244; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>DISTRIBUTED RATE LIMITER</h1>
+  <span>riftcodex api - gossip protocol - g-counter crdt</span>
+</header>
+
+<div class="label">Global Requests This Window</div>
+<div class="big-number">
+  <span id="total">-</span><span class="denom"> / <span id="limit">-</span></span>
+</div>
+<div class="bar-track"><div class="bar-fill" id="bar"></div></div>
+
+<div class="stats-row">
+  <div class="stat"><div class="label">Allowed</div><div class="val ok" id="allowed">-</div></div>
+  <div class="stat"><div class="label">Rejected</div><div class="val bad" id="rejected">-</div></div>
+  <div class="stat"><div class="label">Riftcodex Hits</div><div class="val hit" id="hits">-</div></div>
+  <div class="stat"><div class="label">Nodes Online</div><div class="val" id="online">-</div></div>
+</div>
+
+<div class="label" style="margin-bottom:1rem">Node Breakdown</div>
+<div class="nodes" id="nodes"></div>
+<footer id="footer">connecting to stream...</footer>
+
+<script>
+  const es = new EventSource('/stream');
+  es.onmessage = ({ data }) => {
+    const d   = JSON.parse(data);
+    const pct = Math.min(100, (d.global_total / d.limit) * 100);
+
+    document.getElementById('total').textContent    = d.global_total;
+    document.getElementById('limit').textContent    = d.limit;
+    document.getElementById('allowed').textContent  = d.total_allowed;
+    document.getElementById('rejected').textContent = d.total_rejected;
+    document.getElementById('hits').textContent     = d.total_hits;
+    document.getElementById('online').textContent   = `${d.online_count} / ${d.node_count}`;
+
+    const bar = document.getElementById('bar');
+    bar.style.width = pct + '%';
+    bar.className   = 'bar-fill' + (pct > 90 ? ' critical' : pct > 70 ? ' warning' : '');
+
+    document.getElementById('nodes').innerHTML = d.nodes.map(n => {
+      if (n.offline) return `
+        <div class="node-card offline">
+          <div class="name">${n.node_url}</div>
+          <div class="count" style="color:#f38ba8">offline</div>
+        </div>`;
+      const local = n.counts?.[n.node_id] ?? 0;
+      return `
+        <div class="node-card">
+          <div class="name">${n.node_id}</div>
+          <div class="count">${local}</div>
+          <div class="row">
+            <span class="ok">+ ${n.allowed ?? 0}</span>
+            <span class="bad">- ${n.rejected ?? 0}</span>
+            <span>^ ${n.riftcodex_hits ?? 0}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('footer').textContent =
+      `last update ${new Date().toLocaleTimeString()} - stream connected`;
+  };
+  es.onerror = () => {
+    document.getElementById('footer').textContent = 'stream disconnected - reconnecting...';
+  };
+</script>
+</body>
+</html>
