@@ -52,7 +52,34 @@ services:
       - rlnet
     restart: unless-stopped
 
-  # Add the generator and dashboard services here whenever you get around to it
+  generator:
+    build: ./generator
+    environment:
+      NODES: "http://node_a:8000,http://node_b:8000,http://node_c:8000,http://node_d:8000"
+      REQUESTS_PER_MINUTE: "300"
+    depends_on:
+      - node_a
+      - node_b
+      - node_c
+      - node_d
+    networks:
+      - rlnet
+    restart: unless-stopped
+
+  dashboard:
+    build: ./dashboard
+    environment:
+      NODES: "http://node_a:8000,http://node_b:8000,http://node_c:8000,http://node_d:8000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - node_a
+      - node_b
+      - node_c
+      - node_d
+    networks:
+      - rlnet
+    restart: unless-stopped
 
 networks:
   rlnet:
