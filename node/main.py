@@ -16,12 +16,12 @@ from gcounter import GCounter
 NODE_ID = os.getenv("NODE_ID", "node_a")
 PEERS = [p for p in os.getenv("PEERS", "").split(",") if p]
 RATE_LIMIT = int(os.getenv("RATE_LIMIT", "100"))
-RIFTCODEX = os.getenv("RIFTCODEX_URL", "https://api.riftcodex.com")
+TEST_API = os.getenv("TEST_API_URL", "https://httpbin.org")
 
 # State
 counter = GCounter(NODE_ID)
 window_start = int(time.time() // 60)
-stats = {"allowed": 0, "rejected": 0, "riftcodex_hits": 0}
+stats = {"allowed": 0, "rejected": 0, "api_hits": 0}
 mutex_lock = asyncio.Lock()
 
 # Helpers
@@ -34,7 +34,7 @@ async def maybe_reset() -> None:
     if current_window() != window_start:
         counter.reset()
         window_start = current_window()
-        stats = {"allowed": 0, "rejected": 0, "riftcodex_hits": 0}
+        stats = {"allowed": 0, "rejected": 0, "api_hits": 0}
 
 # Gossip loop
 
@@ -110,12 +110,12 @@ async def handle_request(body: dict):
     try:
         async with httpx.AsyncClient(timeout = 5.0) as client:
             response = await client.get(
-                f"{RIFTCODEX}/cards",
+                f"{TEST_API}/cards",
                 params = {"search": query},
             )
         
         async with mutex_lock:
-            stats["riftcodex_hits"] += 1
+            stats["api_hits"] += 1
         
         return {
             "allowed": True,

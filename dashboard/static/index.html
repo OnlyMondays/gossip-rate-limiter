@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rate Limiter - Riftcodex</title>
+  <title>Rate Limiter - HTTPBin</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -68,7 +68,7 @@
 <body>
 <header>
   <h1>DISTRIBUTED RATE LIMITER</h1>
-  <span>riftcodex api - gossip protocol - g-counter crdt</span>
+  <span>httpbin api - gossip protocol - g-counter crdt</span>
 </header>
 
 <div class="label">Global Requests This Window</div>
@@ -80,7 +80,7 @@
 <div class="stats-row">
   <div class="stat"><div class="label">Allowed</div><div class="val ok" id="allowed">-</div></div>
   <div class="stat"><div class="label">Rejected</div><div class="val bad" id="rejected">-</div></div>
-  <div class="stat"><div class="label">Riftcodex Hits</div><div class="val hit" id="hits">-</div></div>
+  <div class="stat"><div class="label">HTTPBin Hits</div><div class="val hit" id="hits">-</div></div>
   <div class="stat"><div class="label">Nodes Online</div><div class="val" id="online">-</div></div>
 </div>
 
@@ -119,7 +119,7 @@
           <div class="row">
             <span class="ok">+ ${n.allowed ?? 0}</span>
             <span class="bad">- ${n.rejected ?? 0}</span>
-            <span>^ ${n.riftcodex_hits ?? 0}</span>
+            <span>^ ${n.api_hits ?? 0}</span>
           </div>
         </div>`;
     }).join('');

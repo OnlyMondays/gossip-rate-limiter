@@ -22,7 +22,7 @@ async def poll_all() -> dict:
     merged_counts: dict  = {}
     total_allowed        = 0
     total_rejected       = 0
-    total_riftcodex_hits = 0
+    total_api_hits = 0
     limit                = 100
 
     for node_url, resp in zip(NODES, responses):
@@ -39,7 +39,7 @@ async def poll_all() -> dict:
 
         total_allowed        += data.get("allowed", 0)
         total_rejected       += data.get("rejected", 0)
-        total_riftcodex_hits += data.get("riftcodex_hits", 0)
+        total_api_hits += data.get("api_hits", 0)
         limit                 = data.get("limit", 100)
 
     return {
@@ -49,7 +49,7 @@ async def poll_all() -> dict:
         "limit":          limit,
         "total_allowed":  total_allowed,
         "total_rejected": total_rejected,
-        "total_hits":     total_riftcodex_hits,
+        "total_hits":     total_api_hits,
         "online_count":   sum(1 for n in nodes_data if not n.get("offline")),
         "node_count":     len(NODES),
     }
