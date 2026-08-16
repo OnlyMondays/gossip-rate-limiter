@@ -37,7 +37,6 @@ async def maybe_reset() -> None:
         stats = {"allowed": 0, "rejected": 0, "api_hits": 0}
 
 # Gossip loop
-
 async def gossip_loop() -> None:
     '''
     Every 200ms, we pick a random peer node, send our counts, and then merge what comes back.
@@ -86,7 +85,6 @@ async def lifespan(app: FastAPI):
         pass
 
 # App
-
 app = FastAPI(lifespan = lifespan)
 
 @app.post("/request")

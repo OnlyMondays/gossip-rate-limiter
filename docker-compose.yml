@@ -56,7 +56,7 @@ services:
     build: ./generator
     environment:
       NODES: "http://node_a:8000,http://node_b:8000,http://node_c:8000,http://node_d:8000"
-      REQUESTS_PER_MINUTE: "300"
+      REQUESTS_PER_MINUTE: "${REQUESTS_PER_MINUTE:-300}"
     depends_on:
       - node_a
       - node_b

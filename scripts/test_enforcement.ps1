@@ -4,12 +4,12 @@ docker compose up node_a node_b node_c node_d --build -d
 Write-Host "Waiting for nodes to be ready..."
 Start-Sleep -Seconds 5
 
-Write-Host "Running enforcement test (limit=20, firing 30 requests)..."
+Write-Host "Running enforcement test (limit=100, firing 150 requests)..."
 $ports = @(8001, 8002, 8003, 8004)
 $allowed = 0
 $denied = 0
 
-1..30 | ForEach-Object {
+1..150 | ForEach-Object {
     $port = $ports | Get-Random
     $result = Invoke-RestMethod -Method Post -Uri "http://localhost:$port/request" `
         -ContentType "application/json" -Body '{"query":"test"}'
@@ -18,7 +18,7 @@ $denied = 0
 }
 
 Write-Host ""
-Write-Host "Result: $allowed allowed, $denied denied (expected ~20 allowed, ~10 denied)"
+Write-Host "Result: $allowed allowed, $denied denied (expected ~100 allowed, ~50 denied)"
 
 Write-Host "Tearing down cluster..."
 docker compose down
