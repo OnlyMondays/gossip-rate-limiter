@@ -11,33 +11,37 @@ Write-Host "Spiking traffic to 1000 req/min..."
 $env:REQUESTS_PER_MINUTE = "1000"
 docker compose up generator -d --no-deps --force-recreate
 
-Write-Host "Taking baseline snapshot..."
-Start-Sleep -Seconds 2
+Write-Host "Waiting for next minute boundary to start a clean window..."
+$secondsUntilNextMinute = 60 - ((Get-Date).Second)
+Write-Host "Waiting $secondsUntilNextMinute seconds for window alignment..."
+Start-Sleep -Seconds $secondsUntilNextMinute
+
+Write-Host "Window just reset — taking baseline snapshot now..."
 $before = @(8001, 8002, 8003, 8004) | ForEach-Object {
     Invoke-RestMethod "http://localhost:$_/status"
 }
 
-Write-Host "Spike running for 45 seconds..."
-Start-Sleep -Seconds 45
+Write-Host "Measuring for the full 60-second window..."
+Start-Sleep -Seconds 58
 
 $after = @(8001, 8002, 8003, 8004) | ForEach-Object {
     Invoke-RestMethod "http://localhost:$_/status"
 }
 
 Write-Host ""
-Write-Host "Delta over 45 seconds (window-reset safe):"
+Write-Host "Delta over one full window (~60s):"
 $totalHitsDelta = 0
 $totalRejectedDelta = 0
 for ($i = 0; $i -lt 4; $i++) {
-    $hitsDelta     = if ($after[$i].api_hits -ge $before[$i].api_hits) { $after[$i].api_hits - $before[$i].api_hits } else { $after[$i].api_hits }
-    $rejectedDelta = if ($after[$i].rejected -ge $before[$i].rejected) { $after[$i].rejected - $before[$i].rejected } else { $after[$i].rejected }
+    $hitsDelta     = $after[$i].api_hits - $before[$i].api_hits
+    $rejectedDelta = $after[$i].rejected - $before[$i].rejected
     Write-Host "  node=$($after[$i].node_id)  hits_delta=$hitsDelta  rejected_delta=$rejectedDelta"
     $totalHitsDelta += $hitsDelta
     $totalRejectedDelta += $rejectedDelta
 }
 Write-Host ""
-Write-Host "TOTAL hits in 45s window: $totalHitsDelta  (limit is 100/min, so ~75 expected over 45s)"
-Write-Host "TOTAL rejected in 45s window: $totalRejectedDelta"
+Write-Host "TOTAL hits: $totalHitsDelta  (limit is 100/min, expect ~100)"
+Write-Host "TOTAL rejected: $totalRejectedDelta  (expect ~900 at 1000 req/min load)"
 
 Write-Host ""
 Write-Host "Returning to normal load..."
