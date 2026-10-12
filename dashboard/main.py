@@ -9,12 +9,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 NODES = [n for n in os.getenv("NODES", "").split(",") if n]
+ALLOWED_ORIGINS = [o for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3001").split(",") if o]
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET"],
 )
 
